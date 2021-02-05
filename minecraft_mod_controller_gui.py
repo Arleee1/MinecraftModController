@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import *
 import minecraft_mod_controller as mmc
 
 
-class ConverterGui(QMainWindow):
+class ModControllerGUI(QMainWindow):
 
     def __init__(self):
-        super(ConverterGui, self).__init__()
+        super(ModControllerGUI, self).__init__()
 
         self.title = "Mod Manager"
         self.left = 10
@@ -54,5 +54,5 @@ class ConverterGui(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = ConverterGui()
+    ex = ModControllerGUI()
     sys.exit(app.exec_())
