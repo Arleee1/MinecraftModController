@@ -22,7 +22,7 @@ class ConverterGui(QMainWindow):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        
+
         mod_controller = mmc.ModController()
         mods_folders_list_widget = QListWidget()
         mods_folders_list_widget.addItems(mod_controller.get_mods_folders())
@@ -42,7 +42,14 @@ class ConverterGui(QMainWindow):
         self.selected_item = item.text()
 
     def apply_btn_pressed(self):
+        if self.selected_item is None:
+            self.statusBar().showMessage(f"Please select a mods folder first", 5_000)
+            return
+
+        mod_controller = mmc.ModController()
+        mod_controller.transfer_mods_folder(self.selected_item)
         print(f"Apply button pressed: {self.selected_item}")
+        self.statusBar().showMessage(f"Loaded mods: {self.selected_item}", 5_000)
 
 
 if __name__ == '__main__':
