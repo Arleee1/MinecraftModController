@@ -74,11 +74,20 @@ class ModControllerGUI(QMainWindow):
         options_layout.addWidget(self.options_files_list_widget)
         options_layout.addWidget(apply_options_btn)
 
+        # Create refresh button
+        refresh_button = QPushButton("Refresh")
+        refresh_button.pressed.connect(self.refresh)
+
+        # Create selection area
+        selection_layout = QHBoxLayout()
+        selection_layout.addLayout(mods_layout)
+        selection_layout.addLayout(options_layout)
+
         # Assemble the layouts together
         central_widget = QWidget()
-        central_layout = QHBoxLayout()
-        central_layout.addLayout(mods_layout)
-        central_layout.addLayout(options_layout)
+        central_layout = QVBoxLayout()
+        central_layout.addLayout(selection_layout)
+        central_layout.addWidget(refresh_button)
         central_widget.setLayout(central_layout)
         self.setCentralWidget(central_widget)
 
@@ -87,13 +96,13 @@ class ModControllerGUI(QMainWindow):
         Called when the apply button is pressed and attempts to apply the changes to the mods folders
         :return: None
         """
+        print(len(self.mods_folders_list_widget.selectedItems()))
 
-        selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
-
-        if selected_mods_folder is None:
+        if len(self.mods_folders_list_widget.selectedItems()) == 0:
             self.statusBar().showMessage(f"Please select a mods folder first", 5_000)
             return
 
+        selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
         # mod_controller.transfer_mods_folder(selected_mods_folder)  # changed
         mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True)
@@ -136,12 +145,11 @@ class ModControllerGUI(QMainWindow):
         :return: None
         """
 
-        selected_options_file = self.options_files_list_widget.currentItem().text()
-
-        if selected_options_file is None:
+        if len(self.options_files_list_widget.selectedItems()) == 0:
             self.statusBar().showMessage(f"Please select an options file first", 5_000)
             return
 
+        selected_options_file = self.options_files_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
         # mod_controller.transfer_options_file(selected_options_file)  # changed
         mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False)
@@ -174,6 +182,15 @@ class ModControllerGUI(QMainWindow):
         mod_controller = mmc.ModController()
         mod_controller.rename_mods_or_options(selected_options_file, "test", is_mods=False)
         print(selected_options_file)
+
+    def refresh(self):
+        mod_controller = mmc.ModController()
+
+        self.mods_folders_list_widget.clear()
+        self.mods_folders_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=True))
+
+        self.options_files_list_widget.clear()
+        self.options_files_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=False))
 
 
 if __name__ == '__main__':

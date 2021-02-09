@@ -130,6 +130,8 @@ class ModController:
 
         target_dir = self.MODS_FOLDERS_DIR if is_mods else self.OPTIONS_FOLDER_DIR
 
+        # TODO ignore files if looking for mods folders, and ignore folders if looking for options files
+
         return list(os.listdir(target_dir))
 
     def transfer_mods_or_options(self, src_location: str, *, is_mods: bool) -> None:
