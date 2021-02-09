@@ -49,7 +49,8 @@ class ModControllerGUI(QMainWindow):
 
         # Create mods area
         self.mods_folders_list_widget = MMCListWidget.MMCListWidget("mods_widget")
-        self.mods_folders_list_widget.addItems(mod_controller.get_mods_folders())
+        # self.mods_folders_list_widget.addItems(mod_controller.get_mods_folders())  # changed
+        self.mods_folders_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=True))
         self.mods_folders_list_widget.customContextMenuRequested.connect(self.mods_folders_list_context_menu)
         # self.mods_folders_list_widget.itemClicked.connect(self.mods_folders_list_clicked)
 
@@ -62,7 +63,8 @@ class ModControllerGUI(QMainWindow):
 
         # Create options area
         self.options_files_list_widget = MMCListWidget.MMCListWidget("options_widget")
-        self.options_files_list_widget.addItems(mod_controller.get_options_files())
+        # self.options_files_list_widget.addItems(mod_controller.get_options_files())  # changed
+        self.options_files_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=False))
         self.options_files_list_widget.customContextMenuRequested.connect(self.options_files_list_context_menu)
 
         apply_options_btn = QPushButton("Apply Options")
@@ -93,7 +95,8 @@ class ModControllerGUI(QMainWindow):
             return
 
         mod_controller = mmc.ModController()
-        mod_controller.transfer_mods_folder(selected_mods_folder)
+        # mod_controller.transfer_mods_folder(selected_mods_folder)  # changed
+        mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True)
         print(f"Mods apply button pressed: {selected_mods_folder}")
         self.statusBar().showMessage(f"Loaded mods: {selected_mods_folder}", 5_000)
 
@@ -121,7 +124,7 @@ class ModControllerGUI(QMainWindow):
 
         selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
-        mod_controller.rename_mods_folder(selected_mods_folder, "test")
+        mod_controller.rename_mods_or_options(selected_mods_folder, "test", is_mods=True)
         print(selected_mods_folder)
 
     def mods_folders_list_clicked(self):
@@ -140,7 +143,8 @@ class ModControllerGUI(QMainWindow):
             return
 
         mod_controller = mmc.ModController()
-        mod_controller.transfer_options_file(selected_options_file)
+        # mod_controller.transfer_options_file(selected_options_file)  # changed
+        mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False)
         print(f"Options apply button pressed: {selected_options_file}")
         self.statusBar().showMessage(f"Loaded options: {selected_options_file}", 5_000)
 
@@ -168,7 +172,7 @@ class ModControllerGUI(QMainWindow):
 
         selected_options_file = self.options_files_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
-        mod_controller.rename_options_file(selected_options_file, "test")
+        mod_controller.rename_mods_or_options(selected_options_file, "test", is_mods=False)
         print(selected_options_file)
 
 
