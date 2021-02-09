@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import typing
@@ -75,6 +76,19 @@ class ModController:
         dst_path = os.path.join(self.MODS_FOLDERS_DIR, dst_name)
         print(f"renamed {src_path} to {dst_path}")
         # os.rename(src_path, dst_path)
+
+    def set_mods_or_options_list(self, mods_list: typing.List[str], *, is_mods: bool) -> None:
+        """
+        Stores the list of mods in a json file
+        :param mods_list: The list of mods to be stored
+        :param is_mods: True: stored as a list of mods, False: stored as a list of options
+        :return: None
+        """
+
+        file = "mods_list.json" if is_mods else "options_list.json"
+
+        with open(file, "w") as outfile:
+            json.dump(mods_list, outfile)
 
     def transfer_options_file(self, options_file: str) -> None:
         """
