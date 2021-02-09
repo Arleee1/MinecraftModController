@@ -7,6 +7,7 @@ class ModController:
     def __init__(self) -> None:
 
         # Set constants
+        # TODO Get .minecraft folder dynamically
         self.MINECRAFT_DIR = r"C:\Users\eeerm\AppData\Roaming\.minecraft"
 
         self.MODS_FOLDERS_DIR = os.path.join(self.MINECRAFT_DIR, r"mods_folders")
@@ -69,6 +70,12 @@ class ModController:
 
         return list(os.listdir(self.MODS_FOLDERS_DIR))
 
+    def rename_mods_folder(self, src_name: str, dst_name: str) -> None:
+        src_path = os.path.join(self.MODS_FOLDERS_DIR, src_name)
+        dst_path = os.path.join(self.MODS_FOLDERS_DIR, dst_name)
+        print(f"renamed {src_path} to {dst_path}")
+        # os.rename(src_path, dst_path)
+
     def transfer_options_file(self, options_file: str) -> None:
         """
         Makes a link to the options file to be used by Minecraft
@@ -93,6 +100,12 @@ class ModController:
         """
 
         return list(os.listdir(self.OPTIONS_FOLDER_DIR))
+
+    def rename_options_file(self, src_name: str, dst_name: str) -> None:
+        src_path = os.path.join(self.OPTIONS_FOLDER_DIR, src_name)
+        dst_path = os.path.join(self.OPTIONS_FOLDER_DIR, dst_name)
+        print(f"renamed {src_path} to {dst_path}")
+        # os.rename(src_path, dst_path)
 
 
 if __name__ == "__main__":
