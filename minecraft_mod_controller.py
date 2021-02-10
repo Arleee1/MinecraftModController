@@ -1,6 +1,7 @@
 import json
 import os
 import typing
+from print_debug import print_debug
 
 
 class ModController:
@@ -95,12 +96,12 @@ class ModController:
 
         return result_list
 
-    def transfer_mods_or_options(self, src_location: str, *, is_mods: bool) -> None:
+    def transfer_mods_or_options(self, src_location: str, *, is_mods: bool) -> bool:
         """
         Makes a link to the mods/options folder/file to be used by Forge/Minecraft
         :param src_location: Mods/Options folder/file to be linked to
         :param is_mods: True: linked as mods folder, False: linked as options file
-        :return: None
+        :return: Whether or not the function succeeded
         """
 
         partial_src_dir = self.MODS_FOLDERS_DIR if is_mods else self.OPTIONS_FOLDER_DIR
@@ -116,7 +117,13 @@ class ModController:
 
         dst_dir = self.MODS_DIR if is_mods else self.OPTIONS_FILE
         os.unlink(dst_dir)
-        os.symlink(src_file_or_dir, dst_dir)
+        try:
+            os.symlink(src_file_or_dir, dst_dir)
+        except OSError:
+            print_debug("you need to enable symlinks")
+            return False
+
+        return True
 
     def rename_mods_or_options(self, src_name: str, dst_name: str, *, is_mods: bool) -> None:
         """
@@ -129,7 +136,7 @@ class ModController:
         partial_src = self.MODS_FOLDERS_DIR if is_mods else self.OPTIONS_FOLDER_DIR
         src_path = os.path.join(partial_src, src_name)
         dst_path = os.path.join(partial_src, dst_name)
-        print(f"renamed {src_path} to {dst_path}")
+        print_debug(f"renamed {src_path} to {dst_path}")
         # os.rename(src_path, dst_path)
 
     def resolve_mods_or_options_list(self, *, is_mods: bool) -> typing.List[str]:
@@ -164,12 +171,12 @@ class ModController:
                 reversed_result_list.remove(order_item)
 
         reversed_result_list.reverse()
-        print(f"list: {reversed_result_list}")
+        print_debug(f"list: {reversed_result_list}")
         self.set_mods_or_options_order(reversed_result_list, is_mods=is_mods)
         return reversed_result_list
 
 
 if __name__ == "__main__":
     mod_controller = ModController()
-    print(mod_controller.get_mods_folders())
-    print(mod_controller.get_options_files())
+    print_debug(mod_controller.get_mods_folders())
+    print_debug(mod_controller.get_options_files())

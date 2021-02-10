@@ -1,11 +1,10 @@
-import os
 import sys
 import PyQt5
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 import minecraft_mod_controller as mmc
 import MMCListWidget
+from print_debug import print_debug
 
 
 class ModControllerGUI(QMainWindow):
@@ -91,16 +90,20 @@ class ModControllerGUI(QMainWindow):
         selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
 
+        print_debug(f"Mods apply button pressed: {selected_mods_folder}")
+
         try:
-            mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True)
+            if mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True):
+                self.statusBar().showMessage(f"Loaded mods: {selected_mods_folder}", 5_000)
+                print_debug(f"Loaded mods: {selected_mods_folder}")
+            else:
+                self.statusBar().showMessage(f"You must enable user creation of symbolic links", 5_000)
+                print_debug("You must enable user creation of symbolic links")
         except NotADirectoryError:
-            print(f"{selected_mods_folder} no longer exists")
+            print_debug(f"{selected_mods_folder} no longer exists")
             self.statusBar().showMessage(f"{selected_mods_folder} no longer exists", 5_000)
             self.populate_mods_and_options_lists()
             return
-
-        print(f"Mods apply button pressed: {selected_mods_folder}")
-        self.statusBar().showMessage(f"Loaded mods: {selected_mods_folder}", 5_000)
 
     def mods_folders_list_context_menu(self, position: PyQt5.QtCore.QPoint) -> None:
         """
@@ -128,10 +131,10 @@ class ModControllerGUI(QMainWindow):
         selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
         mod_controller.rename_mods_or_options(selected_mods_folder, "test", is_mods=True)
-        print(selected_mods_folder)
+        print_debug(selected_mods_folder)
 
     def mods_folders_list_clicked(self):
-        print("mods list clicked")
+        print_debug("mods list clicked")
 
     def options_apply_btn_pressed(self) -> None:
         """
@@ -146,16 +149,20 @@ class ModControllerGUI(QMainWindow):
         selected_options_file = self.options_files_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
 
+        print_debug(f"Options apply button pressed: {selected_options_file}")
+
         try:
-            mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False)
+            if mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False):
+                self.statusBar().showMessage(f"Loaded options: {selected_options_file}", 5_000)
+                print_debug(f"Loaded options: {selected_options_file}")
+            else:
+                self.statusBar().showMessage(f"You must enable user creation of symbolic links", 5_000)
+                print_debug("You must enable user creation of symbolic links")
         except FileNotFoundError:
-            print(f"{selected_options_file} no longer exists")
+            print_debug(f"{selected_options_file} no longer exists")
             self.statusBar().showMessage(f"{selected_options_file} no longer exists", 5_000)
             self.populate_mods_and_options_lists()
             return
-
-        print(f"Options apply button pressed: {selected_options_file}")
-        self.statusBar().showMessage(f"Loaded options: {selected_options_file}", 5_000)
 
     def options_files_list_context_menu(self, position: PyQt5.QtCore.QPoint) -> None:
         """
@@ -183,7 +190,7 @@ class ModControllerGUI(QMainWindow):
         selected_options_file = self.options_files_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
         mod_controller.rename_mods_or_options(selected_options_file, "test", is_mods=False)
-        print(selected_options_file)
+        print_debug(selected_options_file)
 
     def populate_mods_and_options_lists(self):
         mod_controller = mmc.ModController()
