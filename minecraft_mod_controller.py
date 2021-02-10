@@ -68,6 +68,8 @@ class ModController:
         print(f"{folder_name} exists: {os.path.exists(folder)}")
         if not os.path.exists(folder):
             print_debug(f"{folder_name}: {folder} does not exist")
+            if os.path.islink(folder):
+                os.rmdir(folder)
             os.mkdir(folder)
 
     def set_mods_or_options_order(self, mods_list: typing.List[str], *, is_mods: bool) -> None:
@@ -139,6 +141,8 @@ class ModController:
         :return: Whether or not the function succeeded
         """
 
+        print_debug(f"transfer_mods_options called, src: {src_location}, is_mods: {is_mods}")
+
         partial_src_dir = self.MODS_FOLDERS_DIR if is_mods else self.OPTIONS_FOLDER_DIR
         src_file_or_dir = os.path.join(partial_src_dir, src_location)
 
@@ -151,7 +155,11 @@ class ModController:
         # TODO Perhaps implement a check to verify if the folder/file is backed up in the other folder doesnt get deleted without saving
 
         dst_dir = self.MODS_DIR if is_mods else self.OPTIONS_FILE
-        os.unlink(dst_dir)
+        if os.path.isfile(dst_dir):
+            os.remove(dst_dir)
+        elif os.path.isdir(dst_dir):
+            os.rmdir(dst_dir)
+
         try:
             os.symlink(src_file_or_dir, dst_dir)
         except OSError:
