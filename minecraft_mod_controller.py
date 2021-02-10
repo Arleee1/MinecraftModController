@@ -1,6 +1,5 @@
 import json
 import os
-import shutil
 import typing
 
 
@@ -16,6 +15,10 @@ class ModController:
 
         self.OPTIONS_FOLDER_DIR = os.path.join(self.MINECRAFT_DIR, r"options_folder")
         self.OPTIONS_FILE = os.path.join(self.MINECRAFT_DIR, r"options.txt")
+
+        self.CURRENT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+        self.MODS_ORDER_JSON_FILE = os.path.join(self.CURRENT_DIR, "mods_list.json")
+        self.OPTIONS_ORDER_JSON_FILE = os.path.join(self.CURRENT_DIR, "options_list.json")
 
         self.refresh()
 
@@ -46,80 +49,32 @@ class ModController:
             else:
                 raise NotADirectoryError(f"{folder_name} is not a directory")
 
-    # def transfer_mods_folder(self, folder: str) -> None:
-    #     """
-    #     Makes a link to the mods folder to be used by Forge
-    #     :param folder: Mods folder to be linked to
-    #     :return: None
-    #     """
-    #
-    #     src_dir = os.path.join(self.MODS_FOLDERS_DIR, folder)
-    #
-    #     if not os.path.isdir(src_dir):
-    #         raise NotADirectoryError(f"{src_dir} is not a directory")
-    #
-    #     # TODO Perhaps implement a check to verify if mods dir is backed up in mods_folder dir, so that mods dir doesnt get deleted without saving
-    #     os.unlink(self.MODS_DIR)
-    #     dst_dir = self.MODS_DIR
-    #     os.symlink(src_dir, dst_dir)
-    #
-    # def get_mods_folders(self) -> typing.List[str]:
-    #     """
-    #     Retrieves the folders in the mods_folders directory
-    #     :return: A list of the folders in the mods_folders directory
-    #     """
-    #
-    #     return list(os.listdir(self.MODS_FOLDERS_DIR))
-    #
-    # def rename_mods_folder(self, src_name: str, dst_name: str) -> None:
-    #     src_path = os.path.join(self.MODS_FOLDERS_DIR, src_name)
-    #     dst_path = os.path.join(self.MODS_FOLDERS_DIR, dst_name)
-    #     print(f"renamed {src_path} to {dst_path}")
-    #     # os.rename(src_path, dst_path)
-    #
-    # def transfer_options_file(self, options_file: str) -> None:
-    #     """
-    #     Makes a link to the options file to be used by Minecraft
-    #     :param options_file: Options file to be linked to
-    #     :return: None
-    #     """
-    #
-    #     src_file = os.path.join(self.OPTIONS_FOLDER_DIR, options_file)
-    #
-    #     if not os.path.isfile(src_file):
-    #         raise FileNotFoundError(f"{src_file} is not a file")
-    #
-    #     # TODO Perhaps implement a check to verify if options file is backed up in options_folder dir, so that the options file doesnt get deleted without saving
-    #     os.unlink(self.OPTIONS_FILE)
-    #     dst_dir = self.OPTIONS_FILE
-    #     os.symlink(src_file, dst_dir)
-    #
-    # def get_options_files(self) -> typing.List[str]:
-    #     """
-    #     Retrieves the files in the options_folder directory
-    #     :return: A list of the folders in the options_folder directory
-    #     """
-    #
-    #     return list(os.listdir(self.OPTIONS_FOLDER_DIR))
-    #
-    # def rename_options_file(self, src_name: str, dst_name: str) -> None:
-    #     src_path = os.path.join(self.OPTIONS_FOLDER_DIR, src_name)
-    #     dst_path = os.path.join(self.OPTIONS_FOLDER_DIR, dst_name)
-    #     print(f"renamed {src_path} to {dst_path}")
-    #     # os.rename(src_path, dst_path)
-
-    def set_mods_or_options_list(self, mods_list: typing.List[str], *, is_mods: bool) -> None:
+    def set_mods_or_options_order(self, mods_list: typing.List[str], *, is_mods: bool) -> None:
         """
-        Stores the list of mods/options in a json file
+        Stores the ordered list of mods/options in a json file
         :param mods_list: The list of mods/options to be stored
         :param is_mods: True: stored as a list of mods, False: stored as a list of options
         :return: None
         """
 
-        file = "mods_list.json" if is_mods else "options_list.json"
+        file = self.MODS_ORDER_JSON_FILE if is_mods else self.OPTIONS_ORDER_JSON_FILE
 
         with open(file, "w") as outfile:
             json.dump(mods_list, outfile)
+
+    def get_mods_or_options_order(self, *, is_mods: bool) -> typing.List[str]:
+        """
+        Retrieves the ordered list of mods/options
+        :param is_mods: True: retrieves the ordered list of mods, False: retrieves the ordered list of options
+        :return: The ordered list of options or mods
+        """
+
+        file = self.MODS_ORDER_JSON_FILE if is_mods else self.OPTIONS_ORDER_JSON_FILE
+
+        with open(file, "r") as f:
+            result_list = json.load(f)
+
+        return result_list
 
     def get_mods_or_options(self, *, is_mods: bool) -> typing.List[str]:
         """
@@ -128,11 +83,17 @@ class ModController:
         :return: The list of mods folders/options files
         """
 
+        # TODO if you wanted to be fancy you could get the folders in subdirectories, I don't want to be fancy though
+
         target_dir = self.MODS_FOLDERS_DIR if is_mods else self.OPTIONS_FOLDER_DIR
 
-        # TODO ignore files if looking for mods folders, and ignore folders if looking for options files
+        # ignore files if looking for mods folders, and ignore folders if looking for options files
+        if is_mods:
+            result_list = [item for item in os.listdir(target_dir) if os.path.isdir(os.path.join(target_dir, item))]
+        else:
+            result_list = [item for item in os.listdir(target_dir) if os.path.isfile(os.path.join(target_dir, item))]
 
-        return list(os.listdir(target_dir))
+        return result_list
 
     def transfer_mods_or_options(self, src_location: str, *, is_mods: bool) -> None:
         """
@@ -151,7 +112,7 @@ class ModController:
         if (not os.path.isfile(src_file_or_dir)) and (not is_mods):
             raise FileNotFoundError(f"{src_file_or_dir} is not a file")
 
-        # TODO Perhaps implement a check to verify if mods dir is backed up in mods_folder dir, so that mods dir doesnt get deleted without saving
+        # TODO Perhaps implement a check to verify if the folder/file is backed up in the other folder doesnt get deleted without saving
 
         dst_dir = self.MODS_DIR if is_mods else self.OPTIONS_FILE
         os.unlink(dst_dir)
@@ -170,6 +131,42 @@ class ModController:
         dst_path = os.path.join(partial_src, dst_name)
         print(f"renamed {src_path} to {dst_path}")
         # os.rename(src_path, dst_path)
+
+    def resolve_mods_or_options_list(self, *, is_mods: bool) -> typing.List[str]:
+        """
+        Resolves the list of files/folders against the ordered list
+        :param is_mods: True: resolves the list of mods folders, False: resolves the list of options files
+        :return: The resolved list of mods folders/options files
+        """
+
+        file_list = self.get_mods_or_options(is_mods=is_mods)
+        order_list = self.get_mods_or_options_order(is_mods=is_mods)
+
+        reversed_result_list = order_list
+        reversed_result_list.reverse()  # List is reversed so append() works at the beginning
+
+        # Find each item that is in the list of files, but not in the ordered list, and adds it to the beginning of the ordered list
+        for file_item in file_list:
+            same = False
+            for order_item in order_list:
+                if file_item == order_item:
+                    same = True
+            if not same:
+                reversed_result_list.append(file_item)
+
+        # Find each item that is in the ordered list but not in the files list, and removes it from the ordered list
+        for order_item in order_list:
+            same = False
+            for file_item in file_list:
+                if file_item == order_item:
+                    same = True
+            if not same:
+                reversed_result_list.remove(order_item)
+
+        reversed_result_list.reverse()
+        print(f"list: {reversed_result_list}")
+        self.set_mods_or_options_order(reversed_result_list, is_mods=is_mods)
+        return reversed_result_list
 
 
 if __name__ == "__main__":

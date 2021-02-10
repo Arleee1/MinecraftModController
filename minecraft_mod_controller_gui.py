@@ -1,3 +1,4 @@
+import os
 import sys
 import PyQt5
 from PyQt5 import QtCore, QtWidgets
@@ -30,29 +31,13 @@ class ModControllerGUI(QMainWindow):
         :return: None
         """
 
-        # TODO Remember the order of the mods and options files lists across sessions
-        #   Currently implemented: drag and drop items, and store changes
-        #   How to order items when program restarts:
-        #   Check items against mods_folders dir/options_folder dir
-        #   if there are no changes: keep order the same
-        #   if items are removed: remove from list
-        #   if new items are added: add to bottom (top?) of list
-
-        # TODO Create button to refresh mods folders and options files
-        #   Button should retrieve the folders and files in the directorys and update the respective lists as necessary,
-        #   much like is done on start up
-
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
-        mod_controller = mmc.ModController()
-
         # Create mods area
         self.mods_folders_list_widget = MMCListWidget.MMCListWidget("mods_widget")
-        # self.mods_folders_list_widget.addItems(mod_controller.get_mods_folders())  # changed
-        self.mods_folders_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=True))
+        self.mods_folders_list_widget.set_drop_event_func(self.populate_mods_and_options_lists)
         self.mods_folders_list_widget.customContextMenuRequested.connect(self.mods_folders_list_context_menu)
-        # self.mods_folders_list_widget.itemClicked.connect(self.mods_folders_list_clicked)
 
         apply_mods_btn = QPushButton("Apply Mods")
         apply_mods_btn.pressed.connect(self.mods_apply_btn_pressed)
@@ -63,9 +48,10 @@ class ModControllerGUI(QMainWindow):
 
         # Create options area
         self.options_files_list_widget = MMCListWidget.MMCListWidget("options_widget")
-        # self.options_files_list_widget.addItems(mod_controller.get_options_files())  # changed
-        self.options_files_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=False))
+        self.options_files_list_widget.set_drop_event_func(self.populate_mods_and_options_lists)
         self.options_files_list_widget.customContextMenuRequested.connect(self.options_files_list_context_menu)
+
+        self.populate_mods_and_options_lists()
 
         apply_options_btn = QPushButton("Apply Options")
         apply_options_btn.pressed.connect(self.options_apply_btn_pressed)
@@ -74,9 +60,10 @@ class ModControllerGUI(QMainWindow):
         options_layout.addWidget(self.options_files_list_widget)
         options_layout.addWidget(apply_options_btn)
 
-        # Create refresh button
+        # Create populate_mods_and_options_lists button
         refresh_button = QPushButton("Refresh")
-        refresh_button.pressed.connect(self.refresh)
+        refresh_button.pressed.connect(self.populate_mods_and_options_lists)
+        # TODO make populate_mods_and_options_lists button look nicer
 
         # Create selection area
         selection_layout = QHBoxLayout()
@@ -96,7 +83,6 @@ class ModControllerGUI(QMainWindow):
         Called when the apply button is pressed and attempts to apply the changes to the mods folders
         :return: None
         """
-        print(len(self.mods_folders_list_widget.selectedItems()))
 
         if len(self.mods_folders_list_widget.selectedItems()) == 0:
             self.statusBar().showMessage(f"Please select a mods folder first", 5_000)
@@ -104,8 +90,15 @@ class ModControllerGUI(QMainWindow):
 
         selected_mods_folder = self.mods_folders_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
-        # mod_controller.transfer_mods_folder(selected_mods_folder)  # changed
-        mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True)
+
+        try:
+            mod_controller.transfer_mods_or_options(selected_mods_folder, is_mods=True)
+        except NotADirectoryError:
+            print(f"{selected_mods_folder} no longer exists")
+            self.statusBar().showMessage(f"{selected_mods_folder} no longer exists", 5_000)
+            self.populate_mods_and_options_lists()
+            return
+
         print(f"Mods apply button pressed: {selected_mods_folder}")
         self.statusBar().showMessage(f"Loaded mods: {selected_mods_folder}", 5_000)
 
@@ -118,6 +111,7 @@ class ModControllerGUI(QMainWindow):
 
         right_click_menu = QMenu()
         rename_action = QAction("Rename", self)
+
         # Check if it is on the item when you right-click, if it is not, delete and modify will not be displayed.
         right_click_menu.addAction(rename_action)
         rename_action.triggered.connect(self.rename_mods_folder)
@@ -151,8 +145,15 @@ class ModControllerGUI(QMainWindow):
 
         selected_options_file = self.options_files_list_widget.currentItem().text()
         mod_controller = mmc.ModController()
-        # mod_controller.transfer_options_file(selected_options_file)  # changed
-        mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False)
+
+        try:
+            mod_controller.transfer_mods_or_options(selected_options_file, is_mods=False)
+        except FileNotFoundError:
+            print(f"{selected_options_file} no longer exists")
+            self.statusBar().showMessage(f"{selected_options_file} no longer exists", 5_000)
+            self.populate_mods_and_options_lists()
+            return
+
         print(f"Options apply button pressed: {selected_options_file}")
         self.statusBar().showMessage(f"Loaded options: {selected_options_file}", 5_000)
 
@@ -165,6 +166,7 @@ class ModControllerGUI(QMainWindow):
 
         right_click_menu = QMenu()
         rename_action = QAction("Rename", self)
+
         # Check if it is on the item when you right-click, if it is not, delete and modify will not be displayed.
         right_click_menu.addAction(rename_action)
         rename_action.triggered.connect(self.rename_options_file)
@@ -183,14 +185,16 @@ class ModControllerGUI(QMainWindow):
         mod_controller.rename_mods_or_options(selected_options_file, "test", is_mods=False)
         print(selected_options_file)
 
-    def refresh(self):
+    def populate_mods_and_options_lists(self):
         mod_controller = mmc.ModController()
 
         self.mods_folders_list_widget.clear()
-        self.mods_folders_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=True))
+        resolved_mods_list = mod_controller.resolve_mods_or_options_list(is_mods=True)
+        self.mods_folders_list_widget.addItems(resolved_mods_list)
 
         self.options_files_list_widget.clear()
-        self.options_files_list_widget.addItems(mod_controller.get_mods_or_options(is_mods=False))
+        resolved_options_list = mod_controller.resolve_mods_or_options_list(is_mods=False)
+        self.options_files_list_widget.addItems(resolved_options_list)
 
 
 if __name__ == '__main__':
