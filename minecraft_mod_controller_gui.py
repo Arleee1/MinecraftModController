@@ -36,7 +36,8 @@ class ModControllerGUI(QMainWindow):
         # Create mods area
         self.mods_folders_list_widget = MMCListWidget.MMCListWidget("mods_widget")
         self.mods_folders_list_widget.set_drop_event_func(self.populate_mods_and_options_lists)
-        self.mods_folders_list_widget.customContextMenuRequested.connect(self.mods_folders_list_context_menu)
+        # Uncomment the line below to add the right click menu to the mods list widget
+        # self.mods_folders_list_widget.customContextMenuRequested.connect(self.mods_folders_list_context_menu)
 
         apply_mods_btn = QPushButton("Apply Mods")
         apply_mods_btn.pressed.connect(self.mods_apply_btn_pressed)
@@ -48,7 +49,8 @@ class ModControllerGUI(QMainWindow):
         # Create options area
         self.options_files_list_widget = MMCListWidget.MMCListWidget("options_widget")
         self.options_files_list_widget.set_drop_event_func(self.populate_mods_and_options_lists)
-        self.options_files_list_widget.customContextMenuRequested.connect(self.options_files_list_context_menu)
+        # Uncomment the line below to add the right click menu to the options list widget
+        # self.options_files_list_widget.customContextMenuRequested.connect(self.options_files_list_context_menu)
 
         self.populate_mods_and_options_lists()
 

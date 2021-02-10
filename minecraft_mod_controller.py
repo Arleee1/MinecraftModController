@@ -2,6 +2,7 @@ import json
 import os
 import typing
 from print_debug import print_debug
+import shutil
 
 
 class ModController:
@@ -9,7 +10,12 @@ class ModController:
 
         # Set constants
         # TODO Get .minecraft folder dynamically
-        self.MINECRAFT_DIR = r"C:\Users\eeerm\AppData\Roaming\.minecraft"
+
+        self.CURRENT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+        self.DATA_DIR = os.path.join(self.CURRENT_DIR, "data")
+
+        self.MINECRAFT_DIR_INFO_FILE = os.path.join(self.DATA_DIR, "dot_minecraft_location.txt")
+        self.MINECRAFT_DIR = self.get_minecraft_dir()
 
         self.MODS_FOLDERS_DIR = os.path.join(self.MINECRAFT_DIR, r"mods_folders")
         self.MODS_DIR = os.path.join(self.MINECRAFT_DIR, r"mods")
@@ -17,9 +23,8 @@ class ModController:
         self.OPTIONS_FOLDER_DIR = os.path.join(self.MINECRAFT_DIR, r"options_folder")
         self.OPTIONS_FILE = os.path.join(self.MINECRAFT_DIR, r"options.txt")
 
-        self.CURRENT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
-        self.MODS_ORDER_JSON_FILE = os.path.join(self.CURRENT_DIR, "mods_list.json")
-        self.OPTIONS_ORDER_JSON_FILE = os.path.join(self.CURRENT_DIR, "options_list.json")
+        self.MODS_ORDER_JSON_FILE = os.path.join(self.DATA_DIR, "mods_list.json")
+        self.OPTIONS_ORDER_JSON_FILE = os.path.join(self.DATA_DIR, "options_list.json")
 
         self.refresh()
 
@@ -36,6 +41,23 @@ class ModController:
         self.verify_folder(self.MODS_DIR, "mods")
         self.verify_folder(self.OPTIONS_FOLDER_DIR, "options_folder")
 
+        # Check if any options files exist, and create 2 default ones if none exist
+        options_1_16 = os.path.join(self.OPTIONS_FOLDER_DIR, "1.16 options")
+        options_1_8 = os.path.join(self.OPTIONS_FOLDER_DIR, "1.8 options")
+
+        if len(os.listdir(self.OPTIONS_FOLDER_DIR)) == 0 and not os.path.islink(self.OPTIONS_FILE) and os.path.exists(self.OPTIONS_FILE):
+            shutil.copyfile(self.OPTIONS_FILE, options_1_16, follow_symlinks=True)
+            shutil.copyfile(self.OPTIONS_FILE, options_1_8, follow_symlinks=True)
+        elif len(os.listdir(self.OPTIONS_FOLDER_DIR)) == 0:
+            if not os.path.isfile(options_1_16):
+                open(options_1_16, "w").close()
+            if not os.path.isfile(options_1_8):
+                open(options_1_8, "w").close()
+
+        # Check if any mods folders are available, and if possible create one with the preinstalled mods
+        if len(os.listdir(self.MODS_FOLDERS_DIR)) == 0:
+            os.mkdir(os.path.join(self.MODS_FOLDERS_DIR, "example mods folder"))
+
     def verify_folder(self, folder: str, folder_name: str) -> None:
         """
         Check if each folder exists, and create it if it doesn't
@@ -43,12 +65,10 @@ class ModController:
         :param folder_name: Display name of the folder
         :return: None
         """
-
-        if not os.path.isdir(folder):
-            if not os.path.isfile(folder):
-                os.mkdir(folder)
-            else:
-                raise NotADirectoryError(f"{folder_name} is not a directory")
+        print(f"{folder_name} exists: {os.path.exists(folder)}")
+        if not os.path.exists(folder):
+            print_debug(f"{folder_name}: {folder} does not exist")
+            os.mkdir(folder)
 
     def set_mods_or_options_order(self, mods_list: typing.List[str], *, is_mods: bool) -> None:
         """
@@ -59,6 +79,11 @@ class ModController:
         """
 
         file = self.MODS_ORDER_JSON_FILE if is_mods else self.OPTIONS_ORDER_JSON_FILE
+
+        self.verify_folder(self.DATA_DIR, "Data")
+
+        if not os.path.isfile(file):
+            open(file, "w").close()
 
         with open(file, "w") as outfile:
             json.dump(mods_list, outfile)
@@ -72,8 +97,18 @@ class ModController:
 
         file = self.MODS_ORDER_JSON_FILE if is_mods else self.OPTIONS_ORDER_JSON_FILE
 
+        self.verify_folder(self.DATA_DIR, "Data")
+
+        if not os.path.isfile(file):
+            open(file, "w").close()
+
         with open(file, "r") as f:
-            result_list = json.load(f)
+            try:
+                result_list = json.load(f)
+            except json.decoder.JSONDecodeError:
+                f.close()
+                os.remove(file)
+                return None
 
         return result_list
 
@@ -149,6 +184,10 @@ class ModController:
         file_list = self.get_mods_or_options(is_mods=is_mods)
         order_list = self.get_mods_or_options_order(is_mods=is_mods)
 
+        if order_list is None:
+            self.set_mods_or_options_order(file_list, is_mods=is_mods)
+            return file_list
+
         reversed_result_list = order_list
         reversed_result_list.reverse()  # List is reversed so append() works at the beginning
 
@@ -175,8 +214,29 @@ class ModController:
         self.set_mods_or_options_order(reversed_result_list, is_mods=is_mods)
         return reversed_result_list
 
+    def get_minecraft_dir(self):
+        self.verify_folder(self.DATA_DIR, "Data")
+
+        minecraft_dir_info_file_default = "# Replace the line below with the path to your .minecraft folder\nInsert .minecraft path here\n# Note that entering a wrong or incomplete .minecraft path could have unintended affects, and the program will not run if the line is unchanged."
+
+        print_debug(f"reading from: {self.MINECRAFT_DIR_INFO_FILE}")
+
+        if not os.path.isfile(self.MINECRAFT_DIR_INFO_FILE):
+            with open(self.MINECRAFT_DIR_INFO_FILE, "w") as f:
+                f.write(minecraft_dir_info_file_default)
+
+        with open(self.MINECRAFT_DIR_INFO_FILE) as f:
+            if f.read() == minecraft_dir_info_file_default:
+                raise IOError(f"Please change the .minecraft location info, in the file: {self.MINECRAFT_DIR_INFO_FILE}")
+
+        with open(self.MINECRAFT_DIR_INFO_FILE) as f:
+            minecraft_dir = [line.strip() for line in f.readlines() if not line[0] == "#"][0]
+
+        print(minecraft_dir)
+        return minecraft_dir
+
 
 if __name__ == "__main__":
     mod_controller = ModController()
-    print_debug(mod_controller.get_mods_folders())
-    print_debug(mod_controller.get_options_files())
+    print_debug(mod_controller.get_mods_or_options(is_mods=True))
+    print_debug(mod_controller.get_mods_or_options(is_mods=False))
