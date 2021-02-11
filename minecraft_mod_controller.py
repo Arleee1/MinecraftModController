@@ -3,6 +3,7 @@ import os
 import typing
 from print_debug import print_debug
 import shutil
+import sys
 
 
 class ModController:
@@ -11,7 +12,11 @@ class ModController:
         # Set constants
         # TODO Get .minecraft folder dynamically
 
-        self.CURRENT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+        #self.CURRENT_DIR = os.path.dirname(os.path.realpath(__file__)) + os.sep
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+            os.chdir(application_path)
+        self.CURRENT_DIR = os.getcwd()
         self.DATA_DIR = os.path.join(self.CURRENT_DIR, "data")
 
         self.MINECRAFT_DIR_INFO_FILE = os.path.join(self.DATA_DIR, "dot_minecraft_location.txt")
@@ -159,6 +164,8 @@ class ModController:
             os.remove(dst_dir)
         elif os.path.isdir(dst_dir):
             os.rmdir(dst_dir)
+        elif os.path.islink(dst_dir):
+            os.unlink(dst_dir)
 
         try:
             os.symlink(src_file_or_dir, dst_dir)

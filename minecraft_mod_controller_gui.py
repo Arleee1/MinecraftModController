@@ -78,6 +78,7 @@ class ModControllerGUI(QMainWindow):
         central_layout.addWidget(refresh_button)
         central_widget.setLayout(central_layout)
         self.setCentralWidget(central_widget)
+        self.statusBar().showMessage("", 1)
 
     def mods_apply_btn_pressed(self) -> None:
         """
@@ -204,6 +205,7 @@ class ModControllerGUI(QMainWindow):
         self.options_files_list_widget.clear()
         resolved_options_list = mod_controller.resolve_mods_or_options_list(is_mods=False)
         self.options_files_list_widget.addItems(resolved_options_list)
+        self.statusBar().showMessage("Updated lists", 5_000)
 
 
 if __name__ == '__main__':
