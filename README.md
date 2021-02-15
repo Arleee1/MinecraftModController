@@ -2,7 +2,9 @@
 Mod manager for minecraft
 
 # How to use
-Run setup.bat once, when you first download the software
+Install python3 and install the requirements.txt file
+
+Enable user creation of Symbolic Links
 
 Provide the path to your .minecraft folder in data/dot_minecraft_location.txt
 
