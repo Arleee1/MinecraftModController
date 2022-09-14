@@ -2,7 +2,9 @@
 Mod manager for minecraft
 
 # How to use
-Install python3 and install the requirements.txt file
+Install python3
+
+Run setup.bat
 
 Enable user creation of Symbolic Links
 
